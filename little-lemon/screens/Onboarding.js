@@ -1,77 +1,106 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { View, Image, StyleSheet, Text, TextInput, Alert, Button } from 'react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const OnboardingScreen = () => {
+const clearOnboardingFlag = async () => {
+  try {
+    await AsyncStorage.removeItem('onboardingComplete');
+    await AsyncStorage.removeItem("userName");
+    await AsyncStorage.removeItem("userEmail");
+    console.log('Onboarding flag cleared');
+  } catch (e) {
+    console.error('Error clearing onboarding flag', e);
+  }
+};
+clearOnboardingFlag();
 
-    const [email, setEmail] = useState("");
-    const [name, setName] = useState("");
-
-   
-  
-    return (
-      <View style={styles.container}>
-        
-        <Text style={styles.textStyle}>Little Lemon</Text>
-     
-        
-        
-        <Text style={styles.textStyle}>Let us get to know you</Text>
-  
-        <TextInput 
-          style={styles.inputStyle}
-          placeholder='Type your name'
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput 
-          style={styles.inputStyle}
-          placeholder='Type your email'
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          textContentType="emailAddress"
-        />
-  
-        <Button
-          onPress={ () => Alert.alert("Next page, it is not programmed yet") }
-          title="Next"
-          color="#006600"
-          
-        />
-      </View>
-    );
+const OnboardingScreen = ({navigation}) => {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const isEmailValid = email => {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(email);
   };
-  
-  export default OnboardingScreen;
-  
-  const styles = StyleSheet.create({
-    container : {
-      marginLeft: 25,
-      marginRight: 25,
-    },
-    logo : {
-      marginTop: 40,
-      marginLeft: 75,
-      height: 120,
-      width: 200,
-      resizeMode: "contain",
-      display:"inline"
-    },
-    textStyle : {
-      marginTop: 30,
-      marginBottom: 30,
-      fontSize: 19,
-      textAlign: 'center'
-    },
-    inputStyle : {
-      marginBottom: 20,
-      fontSize: 16,
-      borderColor: "#000000",
-      borderWidth: 1,
-      height: 40,
-      borderRadius: 10,
-      paddingLeft: 10,
-      paddingRight: 10,
-    },
-  })
+  const isButtonPressable = name && isEmailValid(email);
+
+  const completeOnboarding = async () => {
+
+    try {
+      await AsyncStorage.setItem("onboardingComplete", "true");
+      await AsyncStorage.setItem("userName", name); // Save name
+      await AsyncStorage.setItem("userEmail", email); // Save email
+      navigation.replace("Profile"); // Navigate to Profile after onboarding
+    } catch (e) {
+      console.error("Failed to save onboarding status.", e);
+    }
+  };
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+      <Image
+          style={styles.logo} 
+          source={require("../assets/LEMON.jpeg")}
+        />
+        <Text style={styles.textHeader}>LITTLE LEMON</Text>
+      </View>
+
+      <Text style={styles.textStyle}>Let us get to know you</Text>
+
+      <TextInput 
+        style={styles.inputStyle}
+        placeholder='Type your name'
+        value={name}
+        onChangeText={setName}
+      />
+      <TextInput 
+        style={styles.inputStyle}
+        placeholder='Type your email'
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        textContentType="emailAddress"
+      />
+      <Button title="Complete Onboarding" 
+      onPress={completeOnboarding} 
+      color={isButtonPressable ? "#006600" : "#A9A9A9"} 
+      disabled={!isButtonPressable} />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  textHeader:{
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: "#136f00"
+  },
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'center'
+  },
+  textStyle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  logo: {
+    width: 60,
+    height: 60,
+    marginVertical: 16,
+  },
+  inputStyle: {
+    borderColor: '#ddd',
+    borderWidth: 1,
+    padding: 8,
+    marginBottom: 16,
+  },
+});
+
+export default OnboardingScreen;
